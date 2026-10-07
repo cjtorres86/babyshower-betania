@@ -50,14 +50,51 @@ const toGift = (row) => ({
   reserved: !!row.reserved_by,
   reservedBy: row.reserved_by,
   reservedAt: row.reserved_at,
-  guestNote: row.guest_note || '',
 });
 
-// Vista privada para admin y betania (CON dedicatoria)
-const toGiftPrivate = (row) => ({
+const toMessage = (m) => ({ id: m.id, author: m.author, body: m.body, createdAt: m.created_at });
+
+// El comentario inicial del invitado es el primer mensaje del hilo
+function buildThread(row, msgs) {
+  if (!row.reserved_by) return [];
+  const list = msgs.map(toMessage);
+  if (row.guest_note) {
+    list.unshift({ id: `note-${row.id}`, author: 'guest', body: row.guest_note, createdAt: row.reserved_at });
+  }
+  return list;
+}
+
+// Vista privada para admin y betania (CON dedicatoria y conversación)
+const toGiftPrivate = (row, msgs = []) => ({
   ...toGift(row),
+  guestNote: row.guest_note || '',
   dedication: row.dedication || '',
+  messages: buildThread(row, msgs),
 });
+
+const hashToken = (t) => crypto.createHash('sha256').update(String(t)).digest('hex');
+
+function jwtRole(req) {
+  const token = (req.headers.authorization || '').replace(/^Bearer /, '');
+  try {
+    const p = jwt.verify(token, JWT_SECRET);
+    return p.role === 'admin' || p.role === 'betania' ? p.role : null;
+  } catch {
+    return null;
+  }
+}
+
+// 'betania' si trae sesión de admin/Betania; 'guest' si trae el código de quien reservó
+function threadAccess(req, row) {
+  if (jwtRole(req)) return 'betania';
+  const t = req.headers['x-owner-token'];
+  if (t && row.owner_token_hash) {
+    const a = Buffer.from(hashToken(t));
+    const b = Buffer.from(row.owner_token_hash);
+    if (a.length === b.length && crypto.timingSafeEqual(a, b)) return 'guest';
+  }
+  return null;
+}
 
 function requireAdmin(req, res, next) {
   const token = (req.headers.authorization || '').replace(/^Bearer /, '');
@@ -107,10 +144,13 @@ app.post('/api/gifts/:id/reserve', reserveLimiter, wrap(async (req, res) => {
   if (!Number.isInteger(id)) return res.status(400).json({ error: 'Regalo inválido.' });
   if (name.length < 2) return res.status(400).json({ error: 'Escribe tu nombre para reservar.' });
 
+  // Código secreto para que el invitado pueda volver a ver y responder su conversación
+  const ownerToken = crypto.randomBytes(24).toString('hex');
+
   // Actualización atómica: solo reserva si nadie lo tomó antes.
   const [result] = await pool.query(
-    'UPDATE gifts SET reserved_by = ?, reserved_at = NOW(), guest_note = ?, dedication = ? WHERE id = ? AND reserved_by IS NULL',
-    [name, note, dedication, id]
+    'UPDATE gifts SET reserved_by = ?, reserved_at = NOW(), guest_note = ?, dedication = ?, owner_token_hash = ? WHERE id = ? AND reserved_by IS NULL',
+    [name, note, dedication, hashToken(ownerToken), id]
   );
 
   if (result.affectedRows === 0) {
@@ -120,7 +160,31 @@ app.post('/api/gifts/:id/reserve', reserveLimiter, wrap(async (req, res) => {
   }
 
   const [[row]] = await pool.query('SELECT * FROM gifts WHERE id = ?', [id]);
-  res.json(toGift(row));
+  res.json({ ...toGift(row), ownerToken });
+}));
+
+// Conversación de un regalo: solo quien lo reservó (con su código) y Betania/admin
+app.get('/api/gifts/:id/thread', wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  const [[row]] = await pool.query('SELECT * FROM gifts WHERE id = ?', [id]);
+  if (!row || !row.reserved_by) return res.status(404).json({ error: 'Regalo no encontrado.' });
+  if (!threadAccess(req, row)) return res.status(403).json({ error: 'No tienes acceso a esta conversación.' });
+  const [msgs] = await pool.query('SELECT * FROM gift_messages WHERE gift_id = ? ORDER BY id ASC', [id]);
+  res.json(buildThread(row, msgs));
+}));
+
+app.post('/api/gifts/:id/messages', reserveLimiter, wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  const text = clean(req.body?.text, 500);
+  if (text.length < 1) return res.status(400).json({ error: 'Escribe un mensaje.' });
+  const [[row]] = await pool.query('SELECT * FROM gifts WHERE id = ?', [id]);
+  if (!row || !row.reserved_by) return res.status(404).json({ error: 'Regalo no encontrado.' });
+  const access = threadAccess(req, row);
+  if (!access) return res.status(403).json({ error: 'No tienes acceso a esta conversación.' });
+  const author = access === 'betania' ? 'betania' : 'guest';
+  const [r] = await pool.query('INSERT INTO gift_messages (gift_id, author, body) VALUES (?, ?, ?)', [id, author, text]);
+  const [[msg]] = await pool.query('SELECT * FROM gift_messages WHERE id = ?', [r.insertId]);
+  res.status(201).json(toMessage(msg));
 }));
 
 // ---------- Rutas de administración ----------
@@ -165,7 +229,10 @@ app.post('/api/betania/login', loginLimiter, (req, res) => {
 // Regalos con dedicatorias (solo admin y betania)
 app.get('/api/private/gifts', requireAdminOrBetania, wrap(async (_req, res) => {
   const [rows] = await pool.query('SELECT * FROM gifts ORDER BY sort_order ASC, id ASC');
-  res.json(rows.map(toGiftPrivate));
+  const [msgs] = await pool.query('SELECT * FROM gift_messages ORDER BY id ASC');
+  const byGift = {};
+  for (const m of msgs) (byGift[m.gift_id] ||= []).push(m);
+  res.json(rows.map((r) => toGiftPrivate(r, byGift[r.id] || [])));
 }));
 
 app.post('/api/admin/gifts', requireAdmin, wrap(async (req, res) => {
@@ -189,8 +256,12 @@ app.put('/api/admin/gifts/:id', requireAdmin, wrap(async (req, res) => {
 }));
 
 app.post('/api/admin/gifts/:id/release', requireAdmin, wrap(async (req, res) => {
-  const [r] = await pool.query('UPDATE gifts SET reserved_by = NULL, reserved_at = NULL WHERE id = ?', [Number(req.params.id)]);
+  const [r] = await pool.query(
+    "UPDATE gifts SET reserved_by = NULL, reserved_at = NULL, guest_note = '', dedication = '', owner_token_hash = NULL WHERE id = ?",
+    [Number(req.params.id)]
+  );
   if (r.affectedRows === 0) return res.status(404).json({ error: 'Regalo no encontrado.' });
+  await pool.query('DELETE FROM gift_messages WHERE gift_id = ?', [Number(req.params.id)]);
   const [[row]] = await pool.query('SELECT * FROM gifts WHERE id = ?', [Number(req.params.id)]);
   res.json(toGift(row));
 }));
@@ -198,6 +269,7 @@ app.post('/api/admin/gifts/:id/release', requireAdmin, wrap(async (req, res) => 
 app.delete('/api/admin/gifts/:id', requireAdmin, wrap(async (req, res) => {
   const [r] = await pool.query('DELETE FROM gifts WHERE id = ?', [Number(req.params.id)]);
   if (r.affectedRows === 0) return res.status(404).json({ error: 'Regalo no encontrado.' });
+  await pool.query('DELETE FROM gift_messages WHERE gift_id = ?', [Number(req.params.id)]);
   res.status(204).end();
 }));
 

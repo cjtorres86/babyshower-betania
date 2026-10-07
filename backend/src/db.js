@@ -112,6 +112,25 @@ export async function initDb() {
     // Ya existe, ignorar
   }
 
+  // Hash del código secreto de quien reservó (permite ver y responder su conversación)
+  try {
+    await pool.query(`ALTER TABLE gifts ADD COLUMN owner_token_hash VARCHAR(64) NULL`);
+  } catch {
+    // Ya existe, ignorar
+  }
+
+  // Mensajes entre quien reservó el regalo y Betania
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS gift_messages (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      gift_id INT NOT NULL,
+      author VARCHAR(10) NOT NULL,
+      body VARCHAR(500) NOT NULL,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_gift (gift_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+
   const [[{ total }]] = await pool.query('SELECT COUNT(*) AS total FROM gifts');
   if (total === 0 && process.env.SEED_DEFAULT_GIFTS !== 'false') {
     const rows = DEFAULT_GIFTS.map(([name, comment], i) => [name, comment, i]);

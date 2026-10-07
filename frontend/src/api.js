@@ -1,6 +1,6 @@
 import { API_URL } from './config';
 
-async function request(path, { method = 'GET', body, token } = {}) {
+async function request(path, { method = 'GET', body, token, headers } = {}) {
   let res;
   try {
     res = await fetch(`${API_URL}${path}`, {
@@ -8,6 +8,7 @@ async function request(path, { method = 'GET', body, token } = {}) {
       headers: {
         ...(body ? { 'Content-Type': 'application/json' } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(headers || {}),
       },
       body: body ? JSON.stringify(body) : undefined,
     });
@@ -23,6 +24,15 @@ async function request(path, { method = 'GET', body, token } = {}) {
 export const api = {
   listGifts: () => request('/api/gifts'),
   reserve: (id, name, note, dedication) => request(`/api/gifts/${id}/reserve`, { method: 'POST', body: { name, note, dedication } }),
+  thread: (id, auth = {}) =>
+    request(`/api/gifts/${id}/thread`, { token: auth.token, headers: auth.ownerToken ? { 'x-owner-token': auth.ownerToken } : undefined }),
+  sendMessage: (id, text, auth = {}) =>
+    request(`/api/gifts/${id}/messages`, {
+      method: 'POST',
+      body: { text },
+      token: auth.token,
+      headers: auth.ownerToken ? { 'x-owner-token': auth.ownerToken } : undefined,
+    }),
   login: (password) => request('/api/login', { method: 'POST', body: { password } }),
   loginBetania: (password) => request('/api/betania/login', { method: 'POST', body: { password } }),
   listPrivateGifts: (token) => request('/api/private/gifts', { token }),

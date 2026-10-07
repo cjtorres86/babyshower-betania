@@ -2,13 +2,13 @@ import { motion } from 'framer-motion';
 
 const PAPERS = ['bg-durazno', 'bg-menta', 'bg-lila', 'bg-mantequilla'];
 
-export default function GiftTag({ gift, index, onSelect, justReserved }) {
+export default function GiftTag({ gift, index, onSelect, justReserved, mine, onOpenThread }) {
   const paper = PAPERS[index % PAPERS.length];
   const reserved = gift.reserved;
   const number = index + 1;
 
   return (
-    <li className="w-full">
+    <li className="relative w-full">
       <motion.button
         type="button"
         onClick={() => !reserved && onSelect(gift)}
@@ -54,6 +54,15 @@ export default function GiftTag({ gift, index, onSelect, justReserved }) {
           )}
         </span>
       </motion.button>
+      {mine && (
+        <button
+          type="button"
+          onClick={() => onOpenThread(gift)}
+          className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-tinta px-3.5 py-2 text-sm font-bold text-white shadow-sm hover:bg-tinta/90"
+        >
+          <span aria-hidden="true">💬</span> Mensajes
+        </button>
+      )}
     </li>
   );
 }

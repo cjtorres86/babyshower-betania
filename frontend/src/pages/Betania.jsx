@@ -4,6 +4,7 @@ import { ArrowLeft, Download, Heart, LogOut } from 'lucide-react';
 import { api } from '../api';
 import { EVENT } from '../config';
 import { downloadDedications } from '../download';
+import Thread from '../components/Thread';
 
 // /betania ahora usa el mismo ingreso que el administrador
 export default function Betania() {
@@ -79,11 +80,14 @@ export function BetaniaView({ token, onLogout }) {
                   De {g.reservedBy}
                   {g.reservedAt && ` · ${new Date(g.reservedAt).toLocaleDateString('es-CL')}`}
                 </p>
-                {g.guestNote && (
-                  <p className="mt-2 text-sm text-tinta-soft">
-                    <span className="font-semibold">Comentario:</span> {g.guestNote}
-                  </p>
-                )}
+                <Thread
+                  giftId={g.id}
+                  viewer="betania"
+                  auth={{ token }}
+                  initial={g.messages || []}
+                  collapsible
+                  names={{ own: 'Tú', other: g.reservedBy }}
+                />
                 {g.dedication ? (
                   <div className="mt-3 rounded-xl bg-lila/40 px-4 py-3">
                     <p className="text-xs font-bold uppercase tracking-wide text-tinta-soft">🔒 Dedicatoria secreta</p>

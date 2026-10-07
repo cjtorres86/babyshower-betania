@@ -5,6 +5,7 @@ import { api } from '../api';
 import { EVENT } from '../config';
 import { downloadDedications } from '../download';
 import { BetaniaView } from './Betania';
+import Thread from '../components/Thread';
 
 const TOKEN_KEY = 'bs-betania-admin';
 const store = {
@@ -146,11 +147,14 @@ function GiftRow({ gift, token, onChanged, onDeleted, onAuthError }) {
                   Reservado por {gift.reservedBy}
                   {gift.reservedAt && ` el ${new Date(gift.reservedAt).toLocaleDateString('es-CL')}`}
                 </p>
-                {gift.guestNote && (
-                  <p className="mt-1 text-sm text-tinta-soft">
-                    <span className="font-semibold">Comentario:</span> {gift.guestNote}
-                  </p>
-                )}
+                <Thread
+                  giftId={gift.id}
+                  viewer="betania"
+                  auth={{ token }}
+                  initial={gift.messages || []}
+                  collapsible
+                  names={{ own: 'Tú', other: gift.reservedBy }}
+                />
                 {gift.dedication && (
                   <p className="mt-1 rounded-lg bg-lila/30 px-2.5 py-1.5 text-sm text-tinta">
                     <span className="font-semibold">🔒 Dedicatoria:</span> {gift.dedication}

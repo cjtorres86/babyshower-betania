@@ -4,6 +4,8 @@ import { CalendarHeart, Clock, MapPin, RefreshCw } from 'lucide-react';
 import Clothesline from '../components/Clothesline';
 import GiftTag from '../components/GiftTag';
 import ReserveDialog from '../components/ReserveDialog';
+import MessagesDialog from '../components/MessagesDialog';
+import { getOwnerToken } from '../ownerToken';
 import { api } from '../api';
 import { EVENT } from '../config';
 
@@ -32,9 +34,11 @@ export default function Home() {
   const [loadError, setLoadError] = useState('');
   const [filter, setFilter] = useState('all');
   const [selected, setSelected] = useState(null);
+  const [threadGift, setThreadGift] = useState(null);
   const [lastReservedId, setLastReservedId] = useState(null);
   const info = useEventInfo();
   const closeDialog = useCallback(() => setSelected(null), []);
+  const closeThread = useCallback(() => setThreadGift(null), []);
 
   const load = useCallback(async () => {
     try {
@@ -205,6 +209,8 @@ export default function Home() {
                 index={gifts.indexOf(g)}
                 onSelect={setSelected}
                 justReserved={g.id === lastReservedId}
+                mine={g.reserved && !!getOwnerToken(g.id)}
+                onOpenThread={setThreadGift}
               />
             ))}
           </ul>
@@ -224,6 +230,7 @@ export default function Home() {
         onReserved={onReserved}
         onConflict={load}
       />
+      <MessagesDialog gift={threadGift} onClose={closeThread} />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { X, Loader2 } from 'lucide-react';
 import { api } from '../api';
+import { setOwnerToken } from '../ownerToken';
 
 const NAME_KEY = 'bs-betania-name';
 const readName = () => {
@@ -61,6 +62,7 @@ export default function ReserveDialog({ gift, onClose, onReserved, onConflict })
     try {
       const updated = await api.reserve(gift.id, clean, guestNote.trim(), dedication.trim());
       saveName(clean);
+      if (updated.ownerToken) setOwnerToken(updated.id, updated.ownerToken);
       setStatus('done');
       onReserved(updated);
       celebrate();
@@ -108,6 +110,9 @@ export default function ReserveDialog({ gift, onClose, onReserved, onConflict })
                 <p className="mx-auto mt-3 max-w-xs text-tinta-soft">
                   Reservaste <strong className="text-tinta">{gift.name}</strong>. Ya aparece marcado para todos los invitados.
                 </p>
+                <p className="mx-auto mt-2 max-w-xs text-sm text-tinta-soft">
+                  Para leer o responder mensajes con Betania, toca «Mensajes» en tu regalo.
+                </p>
                 <button
                   type="button"
                   onClick={onClose}
@@ -140,8 +145,11 @@ export default function ReserveDialog({ gift, onClose, onReserved, onConflict })
                 <p className="mt-2 text-sm text-tinta-soft">Todos verán tu nombre junto al regalo.</p>
 
                 <label htmlFor="guest-note" className="mt-5 block font-semibold">
-                  Comentario <span className="font-normal text-tinta-soft">(opcional)</span>
+                  Comentario para Betania <span className="font-normal text-tinta-soft">(opcional)</span>
                 </label>
+                <p className="mt-1 text-sm text-tinta-soft">
+                  Betania podrá responderte y verás su respuesta en este regalo, desde este mismo dispositivo.
+                </p>
                 <textarea
                   id="guest-note"
                   value={guestNote}
