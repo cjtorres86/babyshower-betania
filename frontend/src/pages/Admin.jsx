@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Loader2, LogOut, Pencil, Plus, Trash2, Undo2, Check, X } from 'lucide-react';
+import { ArrowLeft, Download, Loader2, LogOut, Pencil, Plus, Trash2, Undo2, Check, X } from 'lucide-react';
 import { api } from '../api';
 import { EVENT } from '../config';
+import { downloadDedications } from '../download';
+import { BetaniaView } from './Betania';
 
 const TOKEN_KEY = 'bs-betania-admin';
 const store = {
@@ -21,6 +23,14 @@ const store = {
     }
   },
 };
+
+function roleOf(token) {
+  try {
+    return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).role;
+  } catch {
+    return '';
+  }
+}
 
 const inputCls =
   'w-full rounded-xl border-2 border-nube-deep bg-nube px-3.5 py-2.5 outline-none transition focus:border-tinta focus:bg-white';
@@ -48,8 +58,8 @@ function Login({ onLogin }) {
   return (
     <form onSubmit={submit} className="tag-shape relative mx-auto mt-16 max-w-sm bg-white px-7 pb-7 pt-12">
       <span className="absolute left-1/2 top-4 h-4 w-4 -translate-x-1/2 rounded-full border-2 border-tinta bg-nube" aria-hidden="true" />
-      <h1 className="font-display text-2xl">Administrar lista</h1>
-      <p className="mt-1 text-tinta-soft">Ingresa la contraseña del panel.</p>
+      <h1 className="font-display text-2xl">Ingresar</h1>
+      <p className="mt-1 text-tinta-soft">Administrador o Betania: escribe tu contraseña.</p>
       <label htmlFor="pw" className="mt-5 block font-semibold">
         Contraseña
       </label>
@@ -217,6 +227,9 @@ export default function Admin() {
   }
 
   const reserved = gifts.filter((g) => g.reserved).length;
+  const role = roleOf(token);
+
+  if (token && role === 'betania') return <BetaniaView token={token} onLogout={logout} />;
 
   return (
     <div className="min-h-screen px-5 pb-20 pt-8 sm:px-8">
@@ -240,6 +253,14 @@ export default function Admin() {
             <p className="mt-1 text-tinta-soft">
               {gifts.length} regalos en la lista, {reserved} reservados.
             </p>
+            <button
+              type="button"
+              onClick={() => downloadDedications(gifts)}
+              disabled={!gifts.some((g) => g.dedication)}
+              className={`${btnDark} mt-4`}
+            >
+              <Download size={16} /> Descargar dedicatorias
+            </button>
 
             <form onSubmit={addGift} className="mt-8 grid gap-3 rounded-2xl bg-white p-5 sm:grid-cols-[1fr_1fr_auto]">
               <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre del regalo" aria-label="Nombre del regalo" className={inputCls} />

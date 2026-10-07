@@ -213,8 +213,8 @@ export default function Home() {
 
       <footer className="mx-auto mt-20 max-w-6xl px-5 text-center text-sm text-tinta-soft sm:px-8">
         <p>Hecho con cariño para {EVENT.mom} y su bebé.</p>
-        <Link to="/admin" className="mt-2 inline-block underline underline-offset-4 opacity-70 hover:opacity-100">
-          Administrar lista
+        <Link to="/admin" className="mt-4 inline-flex items-center rounded-full bg-tinta px-5 py-2.5 font-bold text-white hover:bg-tinta/90">
+          Ingresar (Administrador / Betania)
         </Link>
       </footer>
 

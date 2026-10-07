@@ -134,6 +134,23 @@ app.post('/api/admin/login', loginLimiter, (req, res) => {
   res.json({ token, role: 'admin' });
 });
 
+// Login único: la contraseña define si entra admin o Betania
+app.post('/api/login', loginLimiter, (req, res) => {
+  const given = Buffer.from(String(req.body?.password ?? ''));
+  const matches = (pw) => {
+    if (!pw) return false;
+    const expected = Buffer.from(pw);
+    return given.length === expected.length && crypto.timingSafeEqual(given, expected);
+  };
+  if (matches(ADMIN_PASSWORD)) {
+    return res.json({ token: jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '12h' }), role: 'admin' });
+  }
+  if (matches(BETANIA_PASSWORD)) {
+    return res.json({ token: jwt.sign({ role: 'betania' }, JWT_SECRET, { expiresIn: '24h' }), role: 'betania' });
+  }
+  res.status(401).json({ error: 'Contraseña incorrecta.' });
+});
+
 // Login de Betania
 app.post('/api/betania/login', loginLimiter, (req, res) => {
   if (!BETANIA_PASSWORD) return res.status(503).json({ error: 'El acceso de Betania no está configurado.' });

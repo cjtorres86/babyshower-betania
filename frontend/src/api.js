@@ -23,7 +23,7 @@ async function request(path, { method = 'GET', body, token } = {}) {
 export const api = {
   listGifts: () => request('/api/gifts'),
   reserve: (id, name, note, dedication) => request(`/api/gifts/${id}/reserve`, { method: 'POST', body: { name, note, dedication } }),
-  login: (password) => request('/api/admin/login', { method: 'POST', body: { password } }),
+  login: (password) => request('/api/login', { method: 'POST', body: { password } }),
   loginBetania: (password) => request('/api/betania/login', { method: 'POST', body: { password } }),
   listPrivateGifts: (token) => request('/api/private/gifts', { token }),
   createGift: (token, gift) => request('/api/admin/gifts', { method: 'POST', body: gift, token }),
