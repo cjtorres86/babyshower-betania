@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+@theme {
+  --color-nube: #EEF3F7;
+  --color-nube-deep: #DCE6EE;
+  --color-tinta: #2E3A59;
+  --color-tinta-soft: #5A6684;
+  --color-durazno: #F7B9A1;
+  --color-menta: #A8D8C8;
+  --color-lila: #C9B6E4;
+  --color-mantequilla: #F5D77E;
+  --color-madera: #C99A6B;
+  --color-timbre: #C2475B;
+
+  --font-display: "DynaPuff", ui-rounded, system-ui, sans-serif;
+  --font-sans: "Nunito Sans", system-ui, sans-serif;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-nube);
+  color: var(--color-tinta);
+  font-family: var(--font-sans);
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Textura suave de papel en el fondo */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.35;
+  background-image: radial-gradient(rgba(46, 58, 89, 0.08) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-tinta);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Etiqueta de regalo: esquinas superiores cortadas */
+.tag-shape {
+  clip-path: polygon(22px 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%, 0 22px);
+}
+
+/* Timbre de goma con textura gastada */
+.stamp {
+  color: var(--color-timbre);
+  border: 3px solid currentColor;
+  border-radius: 10px;
+  mask-image: radial-gradient(circle at 30% 40%, #000 60%, rgba(0, 0, 0, 0.75) 61%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1.6 1.4'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+  mask-composite: intersect;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
