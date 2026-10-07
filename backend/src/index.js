@@ -9,10 +9,14 @@ import { pool, initDb } from './db.js';
 const app = express();
 const PORT = process.env.PORT || 4000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const BETANIA_PASSWORD = process.env.BETANIA_PASSWORD;
 const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex');
 
 if (!ADMIN_PASSWORD) {
   console.warn('⚠️  ADMIN_PASSWORD no está configurada: el panel de administración quedará deshabilitado.');
+}
+if (!BETANIA_PASSWORD) {
+  console.warn('⚠️  BETANIA_PASSWORD no está configurada: el acceso de Betania quedará deshabilitado.');
 }
 
 // ---------- Middlewares ----------
@@ -38,6 +42,7 @@ const loginLimiter = rateLimit({ windowMs: 15 * 60_000, max: 10, standardHeaders
 
 const clean = (v, max) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
 
+// Vista pública (SIN dedicatoria)
 const toGift = (row) => ({
   id: row.id,
   name: row.name,
@@ -48,10 +53,31 @@ const toGift = (row) => ({
   guestNote: row.guest_note || '',
 });
 
+// Vista privada para admin y betania (CON dedicatoria)
+const toGiftPrivate = (row) => ({
+  ...toGift(row),
+  dedication: row.dedication || '',
+});
+
 function requireAdmin(req, res, next) {
   const token = (req.headers.authorization || '').replace(/^Bearer /, '');
   try {
-    jwt.verify(token, JWT_SECRET);
+    const payload = jwt.verify(token, JWT_SECRET);
+    if (payload.role !== 'admin') return res.status(403).json({ error: 'Acceso solo para administrador.' });
+    next();
+  } catch {
+    res.status(401).json({ error: 'Sesión inválida o expirada. Vuelve a ingresar.' });
+  }
+}
+
+function requireAdminOrBetania(req, res, next) {
+  const token = (req.headers.authorization || '').replace(/^Bearer /, '');
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    if (payload.role !== 'admin' && payload.role !== 'betania') {
+      return res.status(403).json({ error: 'Acceso no autorizado.' });
+    }
+    req.userRole = payload.role;
     next();
   } catch {
     res.status(401).json({ error: 'Sesión inválida o expirada. Vuelve a ingresar.' });
@@ -77,13 +103,14 @@ app.post('/api/gifts/:id/reserve', reserveLimiter, wrap(async (req, res) => {
   const id = Number(req.params.id);
   const name = clean(req.body?.name, 120);
   const note = clean(req.body?.note, 300);
+  const dedication = clean(req.body?.dedication, 500);
   if (!Number.isInteger(id)) return res.status(400).json({ error: 'Regalo inválido.' });
   if (name.length < 2) return res.status(400).json({ error: 'Escribe tu nombre para reservar.' });
 
   // Actualización atómica: solo reserva si nadie lo tomó antes.
   const [result] = await pool.query(
-    'UPDATE gifts SET reserved_by = ?, reserved_at = NOW(), guest_note = ? WHERE id = ? AND reserved_by IS NULL',
-    [name, note, id]
+    'UPDATE gifts SET reserved_by = ?, reserved_at = NOW(), guest_note = ?, dedication = ? WHERE id = ? AND reserved_by IS NULL',
+    [name, note, dedication, id]
   );
 
   if (result.affectedRows === 0) {
@@ -104,8 +131,25 @@ app.post('/api/admin/login', loginLimiter, (req, res) => {
   const ok = given.length === expected.length && crypto.timingSafeEqual(given, expected);
   if (!ok) return res.status(401).json({ error: 'Contraseña incorrecta.' });
   const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '12h' });
-  res.json({ token });
+  res.json({ token, role: 'admin' });
 });
+
+// Login de Betania
+app.post('/api/betania/login', loginLimiter, (req, res) => {
+  if (!BETANIA_PASSWORD) return res.status(503).json({ error: 'El acceso de Betania no está configurado.' });
+  const given = Buffer.from(String(req.body?.password ?? ''));
+  const expected = Buffer.from(BETANIA_PASSWORD);
+  const ok = given.length === expected.length && crypto.timingSafeEqual(given, expected);
+  if (!ok) return res.status(401).json({ error: 'Contraseña incorrecta.' });
+  const token = jwt.sign({ role: 'betania' }, JWT_SECRET, { expiresIn: '24h' });
+  res.json({ token, role: 'betania' });
+});
+
+// Regalos con dedicatorias (solo admin y betania)
+app.get('/api/private/gifts', requireAdminOrBetania, wrap(async (_req, res) => {
+  const [rows] = await pool.query('SELECT * FROM gifts ORDER BY sort_order ASC, id ASC');
+  res.json(rows.map(toGiftPrivate));
+}));
 
 app.post('/api/admin/gifts', requireAdmin, wrap(async (req, res) => {
   const name = clean(req.body?.name, 160);

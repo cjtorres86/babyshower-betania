@@ -92,6 +92,7 @@ export async function initDb() {
       reserved_by VARCHAR(120) NULL,
       reserved_at DATETIME NULL,
       guest_note VARCHAR(300) NOT NULL DEFAULT '',
+      dedication VARCHAR(500) NOT NULL DEFAULT '',
       sort_order INT NOT NULL DEFAULT 0,
       created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
@@ -100,6 +101,13 @@ export async function initDb() {
   // Agrega columna guest_note si no existe (para bases de datos ya creadas)
   try {
     await pool.query(`ALTER TABLE gifts ADD COLUMN guest_note VARCHAR(300) NOT NULL DEFAULT ''`);
+  } catch {
+    // Ya existe, ignorar
+  }
+
+  // Agrega columna dedication si no existe (para bases de datos ya creadas)
+  try {
+    await pool.query(`ALTER TABLE gifts ADD COLUMN dedication VARCHAR(500) NOT NULL DEFAULT ''`);
   } catch {
     // Ya existe, ignorar
   }

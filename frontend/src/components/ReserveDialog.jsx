@@ -31,6 +31,7 @@ function celebrate() {
 export default function ReserveDialog({ gift, onClose, onReserved, onConflict }) {
   const [name, setName] = useState(readName);
   const [guestNote, setGuestNote] = useState('');
+  const [dedication, setDedication] = useState('');
   const [status, setStatus] = useState('idle'); // idle | saving | done | error
   const [error, setError] = useState('');
   const inputRef = useRef(null);
@@ -58,7 +59,7 @@ export default function ReserveDialog({ gift, onClose, onReserved, onConflict })
     setStatus('saving');
     setError('');
     try {
-      const updated = await api.reserve(gift.id, clean, guestNote.trim());
+      const updated = await api.reserve(gift.id, clean, guestNote.trim(), dedication.trim());
       saveName(clean);
       setStatus('done');
       onReserved(updated);
@@ -148,6 +149,23 @@ export default function ReserveDialog({ gift, onClose, onReserved, onConflict })
                   maxLength={300}
                   rows={3}
                   placeholder="Ej: Lo voy a comprar en verde, ¿está bien?"
+                  className="mt-2 w-full resize-none rounded-2xl border-2 border-nube-deep bg-nube px-4 py-3 text-base outline-none transition focus:border-tinta focus:bg-white"
+                />
+
+                <label htmlFor="guest-dedication" className="mt-5 block font-semibold">
+                  Dedicatoria <span className="font-normal text-tinta-soft">(opcional)</span>
+                </label>
+                <div className="mt-2 flex items-center gap-2 rounded-xl bg-lila/40 px-3 py-2 text-sm text-tinta-soft">
+                  <span aria-hidden="true">🔒</span>
+                  <span>Esta dedicatoria es <strong className="text-tinta">secreta</strong>. Solo Betania podrá leerla.</span>
+                </div>
+                <textarea
+                  id="guest-dedication"
+                  value={dedication}
+                  onChange={(e) => setDedication(e.target.value)}
+                  maxLength={500}
+                  rows={3}
+                  placeholder="Ej: Con todo el cariño del mundo para ti y tu bebé 💛"
                   className="mt-2 w-full resize-none rounded-2xl border-2 border-nube-deep bg-nube px-4 py-3 text-base outline-none transition focus:border-tinta focus:bg-white"
                 />
 

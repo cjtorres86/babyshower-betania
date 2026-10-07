@@ -131,10 +131,22 @@ function GiftRow({ gift, token, onChanged, onDeleted, onAuthError }) {
             <p className="font-display text-lg leading-snug">{gift.name}</p>
             {gift.comment && <p className="text-sm text-tinta-soft">{gift.comment}</p>}
             {gift.reserved ? (
-              <p className="mt-1 text-sm font-semibold text-timbre">
-                Reservado por {gift.reservedBy}
-                {gift.reservedAt && ` el ${new Date(gift.reservedAt).toLocaleDateString('es-CL')}`}
-              </p>
+              <>
+                <p className="mt-1 text-sm font-semibold text-timbre">
+                  Reservado por {gift.reservedBy}
+                  {gift.reservedAt && ` el ${new Date(gift.reservedAt).toLocaleDateString('es-CL')}`}
+                </p>
+                {gift.guestNote && (
+                  <p className="mt-1 text-sm text-tinta-soft">
+                    <span className="font-semibold">Comentario:</span> {gift.guestNote}
+                  </p>
+                )}
+                {gift.dedication && (
+                  <p className="mt-1 rounded-lg bg-lila/30 px-2.5 py-1.5 text-sm text-tinta">
+                    <span className="font-semibold">🔒 Dedicatoria:</span> {gift.dedication}
+                  </p>
+                )}
+              </>
             ) : (
               <p className="mt-1 text-sm font-semibold text-emerald-700">Disponible</p>
             )}
@@ -181,7 +193,7 @@ export default function Admin() {
     if (!token) return;
     setLoading(true);
     api
-      .listGifts()
+      .listPrivateGifts(token)
       .then(setGifts)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
