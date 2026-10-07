@@ -50,6 +50,16 @@ export default function ReserveDialog({ gift, onClose, onReserved, onConflict })
     };
   }, [gift, onClose]);
 
+  // Bloquea el scroll de la página de atrás mientras la ventana está abierta
+  useEffect(() => {
+    if (!gift) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [gift]);
+
   async function submit(e) {
     e.preventDefault();
     const clean = name.trim();
@@ -77,7 +87,7 @@ export default function ReserveDialog({ gift, onClose, onReserved, onConflict })
     <AnimatePresence>
       {gift && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-tinta/40 p-4 backdrop-blur-[2px] sm:items-center"
+          className="fixed inset-0 z-50 flex overflow-y-auto overscroll-contain bg-tinta/40 p-4 backdrop-blur-[2px]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -92,7 +102,7 @@ export default function ReserveDialog({ gift, onClose, onReserved, onConflict })
             animate={{ y: 0, rotate: 0, opacity: 1 }}
             exit={{ y: 40, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 260, damping: 24 }}
-            className="tag-shape relative w-full max-w-md bg-white px-7 pb-7 pt-12 shadow-[0_24px_60px_-20px_rgba(46,58,89,0.45)]"
+            className="tag-shape relative m-auto w-full max-w-md bg-white px-7 pb-7 pt-12 shadow-[0_24px_60px_-20px_rgba(46,58,89,0.45)]"
           >
             <span className="absolute left-1/2 top-4 h-4 w-4 -translate-x-1/2 rounded-full border-2 border-tinta bg-nube" aria-hidden="true" />
             <button

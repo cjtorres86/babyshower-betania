@@ -14,11 +14,21 @@ export default function MessagesDialog({ gift, onClose }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [gift, onClose]);
 
+  // Bloquea el scroll de la página de atrás mientras la ventana está abierta
+  useEffect(() => {
+    if (!gift) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [gift]);
+
   return (
     <AnimatePresence>
       {gift && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-tinta/40 p-4 backdrop-blur-[2px] sm:items-center"
+          className="fixed inset-0 z-50 flex overflow-y-auto overscroll-contain bg-tinta/40 p-4 backdrop-blur-[2px]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -33,7 +43,7 @@ export default function MessagesDialog({ gift, onClose }) {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 30, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 260, damping: 24 }}
-            className="relative w-full max-w-md rounded-3xl bg-white px-6 pb-6 pt-7 shadow-[0_24px_60px_-20px_rgba(46,58,89,0.45)]"
+            className="relative m-auto w-full max-w-md rounded-3xl bg-white px-6 pb-6 pt-7 shadow-[0_24px_60px_-20px_rgba(46,58,89,0.45)]"
           >
             <button type="button" onClick={onClose} className="absolute right-4 top-4 rounded-full p-2 text-tinta-soft hover:bg-nube" aria-label="Cerrar">
               <X size={20} />
