@@ -4,9 +4,9 @@ export const EVENT = {
   // Formato: AAAA-MM-DDTHH:MM (hora de Chile)
   date: '2026-10-29T16:00',
   timeLabel: '16:00 hrs',
-  place: 'Lugar por confirmar',
-  placeDetail: '', // ej: "Av. Siempre Viva 742, Providencia"
-  mapsUrl: '', // ej: link de Google Maps
+  place: 'GDP - SLEP',
+  placeDetail: '',
+  mapsUrl: '',
   message:
     'Estamos preparando todo para recibir a nuestro bebé. Si quieres hacernos un regalo, elige uno de esta lista y resérvalo con tu nombre. Así los demás verán que ya está tomado y nadie lo repite.',
 };

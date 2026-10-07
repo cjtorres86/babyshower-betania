@@ -197,7 +197,7 @@ export default function Home() {
         )}
 
         {!loading && visible.length > 0 && (
-          <ul className="mt-6 grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {visible.map((g) => (
               <GiftTag
                 key={g.id}

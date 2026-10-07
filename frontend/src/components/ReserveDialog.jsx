@@ -30,6 +30,7 @@ function celebrate() {
 
 export default function ReserveDialog({ gift, onClose, onReserved, onConflict }) {
   const [name, setName] = useState(readName);
+  const [guestNote, setGuestNote] = useState('');
   const [status, setStatus] = useState('idle'); // idle | saving | done | error
   const [error, setError] = useState('');
   const inputRef = useRef(null);
@@ -57,7 +58,7 @@ export default function ReserveDialog({ gift, onClose, onReserved, onConflict })
     setStatus('saving');
     setError('');
     try {
-      const updated = await api.reserve(gift.id, clean);
+      const updated = await api.reserve(gift.id, clean, guestNote.trim());
       saveName(clean);
       setStatus('done');
       onReserved(updated);
@@ -136,6 +137,19 @@ export default function ReserveDialog({ gift, onClose, onReserved, onConflict })
                   className="mt-2 w-full rounded-2xl border-2 border-nube-deep bg-nube px-4 py-3 text-lg outline-none transition focus:border-tinta focus:bg-white"
                 />
                 <p className="mt-2 text-sm text-tinta-soft">Todos verán tu nombre junto al regalo.</p>
+
+                <label htmlFor="guest-note" className="mt-5 block font-semibold">
+                  Comentario <span className="font-normal text-tinta-soft">(opcional)</span>
+                </label>
+                <textarea
+                  id="guest-note"
+                  value={guestNote}
+                  onChange={(e) => setGuestNote(e.target.value)}
+                  maxLength={300}
+                  rows={3}
+                  placeholder="Ej: Lo voy a comprar en verde, ¿está bien?"
+                  className="mt-2 w-full resize-none rounded-2xl border-2 border-nube-deep bg-nube px-4 py-3 text-base outline-none transition focus:border-tinta focus:bg-white"
+                />
 
                 {error && (
                   <p role="alert" className="mt-4 rounded-xl bg-timbre/10 px-4 py-3 text-[0.95rem] font-semibold text-timbre">

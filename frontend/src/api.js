@@ -22,7 +22,7 @@ async function request(path, { method = 'GET', body, token } = {}) {
 
 export const api = {
   listGifts: () => request('/api/gifts'),
-  reserve: (id, name) => request(`/api/gifts/${id}/reserve`, { method: 'POST', body: { name } }),
+  reserve: (id, name, note) => request(`/api/gifts/${id}/reserve`, { method: 'POST', body: { name, note } }),
   login: (password) => request('/api/admin/login', { method: 'POST', body: { password } }),
   createGift: (token, gift) => request('/api/admin/gifts', { method: 'POST', body: gift, token }),
   updateGift: (token, id, gift) => request(`/api/admin/gifts/${id}`, { method: 'PUT', body: gift, token }),

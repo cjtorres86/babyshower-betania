@@ -14,8 +14,9 @@ function buildConfig() {
   }
 
   const parsed = new URL(url);
-  const sslMode = (parsed.searchParams.get('ssl-mode') || process.env.DB_SSL || '').toUpperCase();
-  const useSsl = sslMode === 'REQUIRED' || sslMode === 'TRUE' || !!process.env.DB_CA_CERT;
+  const sslParam = (parsed.searchParams.get('ssl-mode') || parsed.searchParams.get('ssl') || process.env.DB_SSL || '').toUpperCase();
+  const isTiDB = parsed.hostname.includes('tidbcloud.com');
+  const useSsl = isTiDB || sslParam === 'REQUIRED' || sslParam === 'TRUE' || sslParam === '1' || !!process.env.DB_CA_CERT;
 
   let ssl;
   if (useSsl) {
@@ -40,22 +41,46 @@ function buildConfig() {
 export const pool = mysql.createPool(buildConfig());
 
 const DEFAULT_GIFTS = [
-  ['Pack de pañales talla RN', 'Cualquier marca, ¡nunca sobran!'],
-  ['Pack de pañales talla P', 'Para cuando crezca un poquito'],
-  ['Toallitas húmedas', 'Sin perfume, idealmente'],
-  ['Set de bodys de algodón 0-3 meses', 'Colores neutros'],
-  ['Pijamas enteritos 3-6 meses', ''],
-  ['Mantita de apego', 'Suave y lavable'],
-  ['Bañera para bebé', 'Con soporte antideslizante'],
-  ['Set de toallas con capucha', ''],
-  ['Termómetro digital', ''],
-  ['Monitor de bebé', 'Con cámara si es posible'],
-  ['Silla de auto (huevito)', 'Regalo grupal 💛'],
-  ['Mochila o bolso maternal', ''],
-  ['Set de mamaderas', 'Anticólicos'],
-  ['Cojín de lactancia', ''],
+  ['Almohada de lactancia', ''],
+  ['Bañera plegable para bebé', 'Con soporte antideslizante'],
+  ['Baberos', ''],
+  ['Bodies manga corta/larga 0-3 meses', 'Colores neutros'],
+  ['Bodies manga corta/larga 3-6 meses', 'Colores neutros'],
+  ['Calcetines', ''],
+  ['Canasto organizador para mudador', ''],
+  ['Chupetes', ''],
+  ['Crema para muda', ''],
+  ['Dosificador de leche en polvo', ''],
+  ['Escobilla para lavar mamaderas', ''],
+  ['Esterilizador de mamaderas', ''],
+  ['Fular portabebé', 'Ignacio 💛'],
+  ['Gimnasio para bebé', ''],
+  ['Gorro de algodón', ''],
+  ['Juguetes sensoriales pequeños', ''],
+  ['Kit de higiene bebé', 'Lima eléctrica, cortaúñas, peineta'],
   ['Libros de tela', 'Para estimulación temprana'],
-  ['Móvil para la cuna', ''],
+  ['Luz nocturna / lámpara tenue', 'Para las tomas nocturnas'],
+  ['Mamadera anticólicos', ''],
+  ['Manta de actividades', ''],
+  ['Manta de algodón o polar', ''],
+  ['Mochila o bolso maternal', ''],
+  ['Mordedores', ''],
+  ['Mudador', ''],
+  ['Muselinas / pañales de tela', ''],
+  ['Organizador de pañales', ''],
+  ['Pañales talla RN', 'Cualquier marca, ¡nunca sobran!'],
+  ['Pañales talla P', 'Para cuando crezca un poquito'],
+  ['Pañales talla M', ''],
+  ['Pañitos para sacar chanchitos', ''],
+  ['Pijamas con cierre 0-3 meses', ''],
+  ['Pijamas con cierre 3-6 meses', ''],
+  ['Saco de dormir para bebé', ''],
+  ['Silla mecedora para bebé', ''],
+  ['Sonajeros', ''],
+  ['Termómetro digital', ''],
+  ['Toalla con capucha', ''],
+  ['Toallas de mano para bebé', ''],
+  ['Toallitas húmedas', 'Sin perfume, idealmente'],
 ];
 
 export async function initDb() {
@@ -66,10 +91,18 @@ export async function initDb() {
       comment VARCHAR(500) NOT NULL DEFAULT '',
       reserved_by VARCHAR(120) NULL,
       reserved_at DATETIME NULL,
+      guest_note VARCHAR(300) NOT NULL DEFAULT '',
       sort_order INT NOT NULL DEFAULT 0,
       created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+
+  // Agrega columna guest_note si no existe (para bases de datos ya creadas)
+  try {
+    await pool.query(`ALTER TABLE gifts ADD COLUMN guest_note VARCHAR(300) NOT NULL DEFAULT ''`);
+  } catch {
+    // Ya existe, ignorar
+  }
 
   const [[{ total }]] = await pool.query('SELECT COUNT(*) AS total FROM gifts');
   if (total === 0 && process.env.SEED_DEFAULT_GIFTS !== 'false') {

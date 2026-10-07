@@ -45,6 +45,7 @@ const toGift = (row) => ({
   reserved: !!row.reserved_by,
   reservedBy: row.reserved_by,
   reservedAt: row.reserved_at,
+  guestNote: row.guest_note || '',
 });
 
 function requireAdmin(req, res, next) {
@@ -75,13 +76,14 @@ app.get('/api/gifts', wrap(async (_req, res) => {
 app.post('/api/gifts/:id/reserve', reserveLimiter, wrap(async (req, res) => {
   const id = Number(req.params.id);
   const name = clean(req.body?.name, 120);
+  const note = clean(req.body?.note, 300);
   if (!Number.isInteger(id)) return res.status(400).json({ error: 'Regalo inválido.' });
   if (name.length < 2) return res.status(400).json({ error: 'Escribe tu nombre para reservar.' });
 
   // Actualización atómica: solo reserva si nadie lo tomó antes.
   const [result] = await pool.query(
-    'UPDATE gifts SET reserved_by = ?, reserved_at = NOW() WHERE id = ? AND reserved_by IS NULL',
-    [name, id]
+    'UPDATE gifts SET reserved_by = ?, reserved_at = NOW(), guest_note = ? WHERE id = ? AND reserved_by IS NULL',
+    [name, note, id]
   );
 
   if (result.affectedRows === 0) {
