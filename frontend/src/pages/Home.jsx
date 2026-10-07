@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarHeart, Clock, MapPin, RefreshCw } from 'lucide-react';
-import Clothesline from '../components/Clothesline';
+import { RefreshCw } from 'lucide-react';
+import Hero from '../components/Hero';
 import GiftTag from '../components/GiftTag';
 import ReserveDialog from '../components/ReserveDialog';
 import MessagesDialog from '../components/MessagesDialog';
@@ -81,59 +81,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen pb-20">
-      {/* Tendedero */}
-      <div className="mx-auto max-w-6xl px-2 pt-4 sm:px-6">
-        <Clothesline />
-      </div>
+      <Hero info={info} />
 
-      <header className="mx-auto max-w-6xl px-5 sm:px-8">
-        <div className="grid gap-10 md:grid-cols-[1.15fr_0.85fr] md:items-end">
-          <div>
-            <p className="font-display text-2xl text-tinta-soft sm:text-3xl">Baby shower de</p>
-            <h1 className="font-display text-[4.2rem] font-semibold leading-[0.95] tracking-tight sm:text-[7rem] lg:text-[8.5rem]">
-              {EVENT.mom}
-            </h1>
-            <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-tinta-soft">{EVENT.message}</p>
-          </div>
-
-          <dl className="tag-shape relative bg-white px-7 pb-7 pt-11 shadow-[0_18px_40px_-24px_rgba(46,58,89,0.5)]">
-            <span className="absolute left-1/2 top-4 h-4 w-4 -translate-x-1/2 rounded-full border-2 border-tinta bg-nube" aria-hidden="true" />
-            <div className="flex gap-3">
-              <CalendarHeart className="mt-0.5 shrink-0 text-timbre" size={22} aria-hidden="true" />
-              <div>
-                <dt className="sr-only">Fecha</dt>
-                <dd className="font-display text-xl">{info.label}</dd>
-                {info.countdown && <dd className="text-tinta-soft">{info.countdown}</dd>}
-              </div>
-            </div>
-            <div className="mt-4 flex gap-3">
-              <Clock className="mt-0.5 shrink-0 text-timbre" size={22} aria-hidden="true" />
-              <div>
-                <dt className="sr-only">Hora</dt>
-                <dd className="font-semibold">{EVENT.timeLabel}</dd>
-              </div>
-            </div>
-            <div className="mt-4 flex gap-3">
-              <MapPin className="mt-0.5 shrink-0 text-timbre" size={22} aria-hidden="true" />
-              <div>
-                <dt className="sr-only">Lugar</dt>
-                <dd className="font-semibold">
-                  {EVENT.mapsUrl ? (
-                    <a href={EVENT.mapsUrl} target="_blank" rel="noreferrer" className="underline decoration-2 underline-offset-4">
-                      {EVENT.place}
-                    </a>
-                  ) : (
-                    EVENT.place
-                  )}
-                </dd>
-                {EVENT.placeDetail && <dd className="text-tinta-soft">{EVENT.placeDetail}</dd>}
-              </div>
-            </div>
-          </dl>
-        </div>
-      </header>
-
-      <main className="mx-auto mt-16 max-w-6xl px-5 sm:px-8">
+      <main id="regalos" className="mx-auto max-w-6xl scroll-mt-4 px-5 pt-8 sm:px-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 className="font-display text-3xl sm:text-4xl">Lista de regalos</h2>
